@@ -71,6 +71,7 @@ function lerItem(fd: FormData) {
   const valor_unitario = parseNumero(txt(fd, "valor_unitario"));
   const totalInf = parseNumero(txt(fd, "valor_total"));
   return {
+    lote: txt(fd, "lote") || null,
     produto_codigo: txt(fd, "produto_codigo"),
     quantidade,
     valor_unitario,
@@ -103,7 +104,8 @@ export async function salvarItem(_: Estado, fd: FormData): Promise<Estado> {
 
   revalidatePath(`/cadastros/licitacoes/${licitacao_id}`);
   revalidatePath(`/ver/licitacao/${licitacao_id}`);
-  if (id) redirect(`/cadastros/licitacoes/${licitacao_id}#itens`);
+  const voltar = txt(fd, "voltar");
+  if (id) redirect(voltar.startsWith("/") && !voltar.startsWith("//") ? `${voltar}#itens` : `/cadastros/licitacoes/${licitacao_id}#itens`);
   return { ok: "Item incluído." };
 }
 
@@ -118,6 +120,7 @@ export async function excluirItem(_: Estado, fd: FormData): Promise<Estado> {
 }
 
 export type LinhaItem = {
+  lote?: string | null;
   codigo: string;
   descricao?: string;
   quantidade: number;
@@ -148,6 +151,7 @@ export async function importarItens(licitacao_id: string, linhas: LinhaItem[]): 
     const totalInf = parseNumero(l.valor_total);
     const item = {
       licitacao_id,
+      lote: l.lote ? String(l.lote).trim() : null,
       produto_codigo: String(l.codigo ?? "").trim(),
       quantidade,
       valor_unitario,

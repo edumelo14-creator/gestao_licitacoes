@@ -7,6 +7,7 @@ import { arred2, parseNumero } from "@/lib/numeros";
 
 type Inicial = {
   id: string;
+  lote: string;
   produto: { codigo: string; descricao: string } | null;
   quantidade: string;
   valor_unitario: string;
@@ -20,7 +21,7 @@ const totalCalc = (q: string, u: string) => {
   return Number.isFinite(n) ? n.toFixed(2).replace(".", ",") : "";
 };
 
-export default function FormItem({ licitacaoId, inicial, cancelarHref }: { licitacaoId: string; inicial?: Inicial; cancelarHref?: string }) {
+export default function FormItem({ licitacaoId, inicial, cancelarHref, voltar }: { licitacaoId: string; inicial?: Inicial; cancelarHref?: string; voltar?: string }) {
   const [estado, enviar, pendente] = useActionState<Estado, FormData>(salvarItem, {});
   const ref = useRef<HTMLFormElement>(null);
   const [qtd, setQtd] = useState(inicial?.quantidade ?? "");
@@ -40,8 +41,13 @@ export default function FormItem({ licitacaoId, inicial, cancelarHref }: { licit
     <form ref={ref} action={enviar} className="cartao p-5">
       <input type="hidden" name="licitacao_id" value={licitacaoId} />
       {inicial && <input type="hidden" name="id" value={inicial.id} />}
+      {voltar && <input type="hidden" name="voltar" value={voltar} />}
       <div className="grid gap-4 md:grid-cols-6">
-        <div className="md:col-span-6">
+        <div className="md:col-span-1">
+          <label className="rotulo" htmlFor="lote">Lote</label>
+          <input id="lote" name="lote" className="campo font-mono" defaultValue={inicial?.lote} />
+        </div>
+        <div className="md:col-span-5">
           <label className="rotulo">Produto <span className="text-alerta">*</span></label>
           <BuscaProduto inicial={inicial?.produto} chaveReset={reset} />
         </div>

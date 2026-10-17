@@ -10,6 +10,7 @@ import { importarItens, importarProdutos, type LinhaItem } from "@/app/(app)/act
 type Modo = "itens" | "produtos";
 
 const ALIASES: Record<string, string[]> = {
+  lote: ["lote", "nlote", "numerolote", "numerodolote", "lt"],
   codigo: ["codigo", "cod", "codproduto", "codigoproduto", "produto", "item"],
   descricao: ["descricao", "desc", "descricaoproduto", "nome"],
   quantidade: ["quantidade", "qtd", "qtde", "quant"],
@@ -58,7 +59,7 @@ function lerCsv(texto: string): string[][] {
 type Previa = LinhaItem & { status: "ok" | "novo" | "erro"; motivo?: string };
 
 const MODELO: Record<Modo, string> = {
-  itens: "Codigo;Descricao;Quantidade;Valor Unitario;Valor Total;Nota Base;Observacao\n1001;Arroz tipo 1 5kg;100;25,90;2590,00;12345;\n",
+  itens: "Lote;Codigo;Descricao;Quantidade;Valor Unitario;Valor Total;Nota Base;Observacao\n1;1001;Arroz tipo 1 5kg;100;25,90;2590,00;12345;\n",
   produtos: "Codigo;Descricao\n1001;Arroz tipo 1 5kg\n",
 };
 
@@ -103,6 +104,7 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
       else if (!Number.isFinite(quantidade)) motivo = "Quantidade inválida";
       else if (!Number.isFinite(valor_unitario)) motivo = "Valor unitário inválido";
       return {
+        lote: String(pega(r, "lote") ?? "").trim() || null,
         codigo, descricao, quantidade, valor_unitario, valor_total,
         nota_base: String(pega(r, "nota_base") ?? "").trim() || null,
         observacao: String(pega(r, "observacao") ?? "").trim() || null,
@@ -154,7 +156,7 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
           <p className="text-xs text-tinta/60">
             Arquivo .xlsx ou .csv com cabeçalho na 1ª linha.{" "}
             {modo === "itens"
-              ? "Obrigatórias: Código, Quantidade, Valor Unitário. Opcionais: Descrição (cria o produto se não existir), Valor Total, Nota Base, Observação."
+              ? "Obrigatórias: Código, Quantidade, Valor Unitário. Opcionais: Lote, Descrição (cria o produto se não existir), Valor Total, Nota Base, Observação."
               : "Colunas: Código e Descrição. Códigos já existentes têm a descrição atualizada."}
           </p>
         </div>
@@ -179,6 +181,7 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
             <table className="tabela">
               <thead className="sticky top-0 bg-white">
                 <tr>
+                  {modo === "itens" && <th>Lote</th>}
                   <th>Código</th><th>Descrição</th>
                   {modo === "itens" && <><th className="text-right">Qtd.</th><th className="text-right">Unitário</th><th className="text-right">Total</th><th>Nota</th></>}
                   <th>Situação</th>
@@ -187,6 +190,7 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
               <tbody>
                 {previa.map((l, i) => (
                   <tr key={i} className={l.status === "erro" ? "bg-alerta/5" : ""}>
+                    {modo === "itens" && <td className="font-mono">{l.lote}</td>}
                     <td className="font-mono">{l.codigo}</td>
                     <td className="text-tinta/70">{l.descricao}</td>
                     {modo === "itens" && (
