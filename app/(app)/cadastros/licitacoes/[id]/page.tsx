@@ -6,8 +6,7 @@ import { obterSessao } from "@/lib/sessao";
 import { gruposFornecedores } from "@/lib/opcoes";
 import { obterItens } from "@/lib/itens";
 import TabelaItens from "@/components/TabelaItens";
-import FormItem from "@/components/FormItem";
-import Importador from "@/components/Importador";
+import ItensAcoes from "@/components/ItensAcoes";
 import { excluirLicitacao, salvarLicitacao } from "@/app/(app)/actions";
 
 export default async function Licitacao({ params }: { params: Promise<{ id: string }> }) {
@@ -44,11 +43,9 @@ export default async function Licitacao({ params }: { params: Promise<{ id: stri
       <section id="itens" className="mt-10 scroll-mt-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/50">Itens / Produtos</h2>
+          <ItensAcoes licitacaoId={l.id} />
         </div>
         <TabelaItens itens={itens} licitacaoId={l.id} editavel />
-        <h3 className="mb-2 mt-6 text-sm font-semibold text-tinta/70">Incluir item</h3>
-        <FormItem licitacaoId={l.id} />
-        <div className="mt-4"><Importador modo="itens" licitacaoId={l.id} /></div>
       </section>
     </>
   );

@@ -11,7 +11,7 @@ type Modo = "itens" | "produtos";
 
 const ALIASES: Record<string, string[]> = {
   lote: ["lote", "nlote", "numerolote", "numerodolote", "lt"],
-  codigo: ["codigo", "cod", "codproduto", "codigoproduto", "produto", "item"],
+  codigo: ["codigo", "cod", "codproduto", "codigoproduto", "codigodoproduto"],
   descricao: ["descricao", "desc", "descricaoproduto", "nome"],
   quantidade: ["quantidade", "qtd", "qtde", "quant"],
   valor_unitario: ["valorunitario", "vlunitario", "vlunit", "unitario", "precounitario", "preco", "valorunit"],
@@ -60,13 +60,13 @@ type Previa = LinhaItem & { status: "ok" | "novo" | "erro"; motivo?: string };
 
 const MODELO: Record<Modo, string> = {
   itens: "Lote;Codigo;Descricao;Quantidade;Valor Unitario;Valor Total;Nota Base;Observacao\n1;1001;Arroz tipo 1 5kg;100;25,90;2590,00;12345;\n",
-  produtos: "Codigo;Descricao\n1001;Arroz tipo 1 5kg\n",
+  produtos: "Codigo;Descricao\n;Arroz tipo 1 5kg\n;Feijão carioca 1kg\n",
 };
 
-export default function Importador({ modo, licitacaoId }: { modo: Modo; licitacaoId?: string }) {
+export default function Importador({ modo, licitacaoId, embutido = false }: { modo: Modo; licitacaoId?: string; embutido?: boolean }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [aberto, setAberto] = useState(false);
+  const [aberto, setAberto] = useState(embutido);
   const [previa, setPrevia] = useState<Previa[]>([]);
   const [msg, setMsg] = useState<{ erro?: string; ok?: string }>({});
   const [enviando, setEnviando] = useState(false);
@@ -82,7 +82,11 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
     }
     if (rows.length < 2) { setMsg({ erro: "O arquivo precisa ter um cabeçalho e ao menos uma linha." }); return; }
     const idx = mapearCabecalho(rows[0]);
-    const obrig = modo === "itens" ? ["codigo", "quantidade", "valor_unitario"] : ["codigo", "descricao"];
+    const obrig = modo === "itens" ? ["quantidade", "valor_unitario"] : ["descricao"];
+    if (modo === "itens" && idx.codigo === undefined && idx.descricao === undefined) {
+      setMsg({ erro: "A planilha precisa da coluna Código ou da coluna Descrição." });
+      return;
+    }
     const faltando = obrig.filter((c) => idx[c] === undefined);
     if (faltando.length) {
       setMsg({ erro: `Colunas não encontradas no cabeçalho: ${faltando.join(", ")}. Baixe o modelo para ver os nomes.` });
@@ -93,14 +97,14 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
       const codigo = String(pega(r, "codigo") ?? "").trim();
       const descricao = String(pega(r, "descricao") ?? "").trim();
       if (modo === "produtos") {
-        return { codigo, descricao, quantidade: 0, valor_unitario: 0, status: codigo && descricao ? "ok" : "erro", motivo: codigo && descricao ? undefined : "Código e descrição obrigatórios" };
+        return { codigo, descricao, quantidade: 0, valor_unitario: 0, status: descricao ? (codigo ? "ok" : "novo") : "erro", motivo: descricao ? (codigo ? undefined : "Código automático") : "Descrição obrigatória" };
       }
       const quantidade = parseNumero(pega(r, "quantidade"));
       const valor_unitario = parseNumero(pega(r, "valor_unitario"));
       const vt = parseNumero(pega(r, "valor_total"));
       const valor_total = Number.isFinite(vt) ? arred2(vt) : arred2(quantidade * valor_unitario);
       let motivo: string | undefined;
-      if (!codigo) motivo = "Sem código";
+      if (!codigo && !descricao) motivo = "Sem código e sem descrição";
       else if (!Number.isFinite(quantidade)) motivo = "Quantidade inválida";
       else if (!Number.isFinite(valor_unitario)) motivo = "Valor unitário inválido";
       return {
@@ -114,14 +118,16 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
 
     if (modo === "itens") {
       const supabase = createClient();
-      const codigos = Array.from(new Set(linhas.filter((l) => l.status === "ok").map((l) => l.codigo)));
+      const codigos = Array.from(new Set(linhas.filter((l) => l.status === "ok" && l.codigo).map((l) => l.codigo!)));
       const existentes = new Set<string>();
       for (let i = 0; i < codigos.length; i += 200) {
         const { data } = await supabase.from("produtos").select("codigo").in("codigo", codigos.slice(i, i + 200));
         data?.forEach((p) => existentes.add(p.codigo));
       }
       for (const l of linhas) {
-        if (l.status !== "ok" || existentes.has(l.codigo)) continue;
+        if (l.status !== "ok") continue;
+        if (!l.codigo) { l.status = "novo"; l.motivo = "Sem código — usa/cria o produto pela descrição"; continue; }
+        if (existentes.has(l.codigo)) continue;
         if (l.descricao) { l.status = "novo"; l.motivo = "Produto será criado no cadastro"; }
         else { l.status = "erro"; l.motivo = "Código não existe no cadastro (sem descrição para criar)"; }
       }
@@ -136,7 +142,7 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
     setEnviando(true); setMsg({});
     const r = modo === "itens"
       ? await importarItens(licitacaoId!, validas.map(({ status: _s, motivo: _m, ...l }) => l))
-      : await importarProdutos(validas.map((l) => ({ codigo: l.codigo, descricao: l.descricao ?? "" })));
+      : await importarProdutos(validas.map((l) => ({ codigo: l.codigo || undefined, descricao: l.descricao ?? "" })));
     setEnviando(false);
     setMsg(r);
     if (r.ok) { setPrevia([]); if (inputRef.current) inputRef.current.value = ""; router.refresh(); }
@@ -149,20 +155,20 @@ export default function Importador({ modo, licitacaoId }: { modo: Modo; licitaca
   }
 
   return (
-    <div className="cartao w-full p-5">
+    <div className={embutido ? "w-full" : "cartao w-full p-5"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-semibold">Importar {modo === "itens" ? "itens" : "produtos"}</h3>
           <p className="text-xs text-tinta/60">
             Arquivo .xlsx ou .csv com cabeçalho na 1ª linha.{" "}
             {modo === "itens"
-              ? "Obrigatórias: Código, Quantidade, Valor Unitário. Opcionais: Lote, Descrição (cria o produto se não existir), Valor Total, Nota Base, Observação."
-              : "Colunas: Código e Descrição. Códigos já existentes têm a descrição atualizada."}
+              ? "Obrigatórias: Quantidade, Valor Unitário e Código ou Descrição. Sem código, o produto é localizado pela descrição (ou criado com código automático). Opcionais: Lote, Valor Total, Nota Base, Observação."
+              : "Coluna Descrição obrigatória. Código opcional: vazio = código automático; se informado e já existir, atualiza a descrição."}
           </p>
         </div>
         <div className="flex gap-2">
           <a href={modeloHref} download={`modelo-${modo}.csv`} className="btn-secundario">Baixar modelo</a>
-          <button type="button" className="btn-secundario" onClick={() => { setAberto(false); setPrevia([]); setMsg({}); }}>Fechar</button>
+          {!embutido && <button type="button" className="btn-secundario" onClick={() => { setAberto(false); setPrevia([]); setMsg({}); }}>Fechar</button>}
         </div>
       </div>
 

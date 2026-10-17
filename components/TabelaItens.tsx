@@ -1,4 +1,4 @@
-import Link from "next/link";
+import BotaoEditarItem from "@/components/BotaoEditarItem";
 import BotaoExcluir from "@/components/BotaoExcluir";
 import { excluirItem } from "@/app/(app)/actions-itens";
 import { fmtMoeda, fmtQtd, fmtUnit } from "@/lib/numeros";
@@ -15,7 +15,7 @@ export type ItemLinha = {
   produtos: { descricao: string } | null;
 };
 
-export default function TabelaItens({ itens, licitacaoId, editavel = false, voltar }: { itens: ItemLinha[]; licitacaoId: string; editavel?: boolean; voltar?: string }) {
+export default function TabelaItens({ itens, licitacaoId, editavel = false }: { itens: ItemLinha[]; licitacaoId: string; editavel?: boolean }) {
   if (!itens.length) return <p className="cartao p-6 text-sm text-tinta/60">Nenhum item nesta licitação.</p>;
   const total = itens.reduce((s, i) => s + Number(i.valor_total), 0);
   return (
@@ -43,7 +43,7 @@ export default function TabelaItens({ itens, licitacaoId, editavel = false, volt
               {editavel && (
                 <td>
                   <div className="flex items-center justify-end gap-2">
-                    <Link href={`/cadastros/licitacoes/${licitacaoId}/itens/${i.id}${voltar ? `?voltar=${encodeURIComponent(voltar)}` : ""}`} className="text-xs text-marca hover:underline">Editar</Link>
+                    <BotaoEditarItem item={i} licitacaoId={licitacaoId} />
                     <BotaoExcluir action={excluirItem} ocultos={{ id: i.id, licitacao_id: licitacaoId }} mensagem={`Excluir o item ${i.produto_codigo}?`} />
                   </div>
                 </td>

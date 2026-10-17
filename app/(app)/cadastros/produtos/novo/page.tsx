@@ -9,10 +9,10 @@ export default function NovoProduto() {
       <FormEntidade
         action={salvarProduto} cancelarHref="/cadastros/produtos"
         campos={[
-          { name: "codigo", label: "Código", tipo: "texto", obrigatorio: true, largura: "metade" },
           { name: "descricao", label: "Descrição", tipo: "texto", obrigatorio: true },
         ]}
       />
+      <p className="mt-2 text-xs text-tinta/50">O código é gerado automaticamente, em sequência.</p>
     </>
   );
 }

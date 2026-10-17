@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { criarProdutoRapido } from "@/app/(app)/actions-itens";
 
 type Produto = { codigo: string; descricao: string };
 
@@ -19,11 +20,25 @@ export default function BuscaProduto({
   const [lista, setLista] = useState<Produto[]>([]);
   const [aberto, setAberto] = useState(false);
   const [ativo, setAtivo] = useState(0);
+  const [buscou, setBuscou] = useState(false);
+  const [criando, setCriando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function cadastrar() {
+    const d = termo.trim();
+    if (!d) return;
+    setCriando(true); setErro("");
+    const r = await criarProdutoRapido(d);
+    setCriando(false);
+    if (r.produto) escolher(r.produto);
+    else setErro(r.erro ?? "Não foi possível cadastrar o produto.");
+  }
 
   useEffect(() => { setSel(inicial ?? null); setTermo(""); }, [chaveReset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const t = termo.trim();
+    setBuscou(false);
     if (!t) { setLista([]); return; }
     const h = setTimeout(async () => {
       const limpo = t.replace(/[%,()]/g, "");
@@ -35,12 +50,13 @@ export default function BuscaProduto({
         .limit(20);
       setLista(data ?? []);
       setAtivo(0);
+      setBuscou(true);
     }, 200);
     return () => clearTimeout(h);
   }, [termo, supabase]);
 
   function escolher(p: Produto) {
-    setSel(p); setTermo(""); setLista([]); setAberto(false);
+    setSel(p); setTermo(""); setLista([]); setAberto(false); setErro("");
   }
 
   return (
@@ -63,15 +79,20 @@ export default function BuscaProduto({
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") { e.preventDefault(); setAtivo((a) => Math.min(a + 1, lista.length - 1)); }
             if (e.key === "ArrowUp") { e.preventDefault(); setAtivo((a) => Math.max(a - 1, 0)); }
-            if (e.key === "Enter" && lista[ativo]) { e.preventDefault(); escolher(lista[ativo]); }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (lista[ativo]) escolher(lista[ativo]);
+              else if (buscou && termo.trim()) cadastrar();
+            }
           }}
         />
       )}
       {!sel && aberto && termo.trim() && (
         <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-linha bg-white shadow-lg">
-          {lista.length === 0 ? (
+          {buscou && lista.length === 0 && (
             <li className="px-3 py-2 text-sm text-tinta/50">Nenhum produto encontrado.</li>
-          ) : lista.map((p, i) => (
+          )}
+          {lista.map((p, i) => (
             <li key={p.codigo}>
               <button
                 type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => escolher(p)}
@@ -82,8 +103,19 @@ export default function BuscaProduto({
               </button>
             </li>
           ))}
+          {buscou && (
+            <li className="border-t border-linha">
+              <button
+                type="button" disabled={criando} onMouseDown={(e) => e.preventDefault()} onClick={cadastrar}
+                className="block w-full px-3 py-2 text-left text-sm font-medium text-marca hover:bg-marca-clara disabled:opacity-60"
+              >
+                {criando ? "Cadastrando…" : <>+ Cadastrar produto “{termo.trim()}” <span className="font-normal text-tinta/50">(código automático)</span></>}
+              </button>
+            </li>
+          )}
         </ul>
       )}
+      {erro && <p className="mt-1 text-xs text-alerta">{erro}</p>}
     </div>
   );
 }

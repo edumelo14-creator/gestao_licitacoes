@@ -22,11 +22,10 @@ export default async function Produto({ params }: { params: Promise<{ codigo: st
       <FormEntidade
         action={salvarProduto} ocultos={{ original: p.codigo }} cancelarHref="/cadastros/produtos"
         campos={[
-          { name: "codigo", label: "Código", tipo: "texto", obrigatorio: true, valor: p.codigo, largura: "metade" },
           { name: "descricao", label: "Descrição", tipo: "texto", obrigatorio: true, valor: p.descricao },
         ]}
       />
-      <p className="mt-2 text-xs text-tinta/50">Alterar o código atualiza automaticamente os itens das licitações que usam este produto.</p>
+      <p className="mt-2 text-xs text-tinta/50">O código ({p.codigo}) é gerado automaticamente e não pode ser alterado.</p>
     </>
   );
 }

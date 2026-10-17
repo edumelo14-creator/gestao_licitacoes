@@ -22,21 +22,33 @@ function erroBanco(msg: string, code?: string) {
 }
 
 /* ---------------- Produtos (cadastro global) ---------------- */
+// O código é gerado pelo banco (maior código numérico + 1) quando não informado.
 
 export async function salvarProduto(_: Estado, fd: FormData): Promise<Estado> {
   const { supabase } = await exigirAdmin();
   const original = txt(fd, "original");
-  const codigo = txt(fd, "codigo");
   const descricao = txt(fd, "descricao");
-  if (!codigo) return { erro: "Informe o código." };
   if (!descricao) return { erro: "Informe a descrição." };
 
   const { error } = original
-    ? await supabase.from("produtos").update({ codigo, descricao }).eq("codigo", original)
-    : await supabase.from("produtos").insert({ codigo, descricao });
+    ? await supabase.from("produtos").update({ descricao }).eq("codigo", original)
+    : await supabase.from("produtos").insert({ descricao });
   if (error) return { erro: erroBanco(error.message, error.code) };
   revalidatePath("/cadastros/produtos");
   redirect("/cadastros/produtos");
+}
+
+export type Produto = { codigo: string; descricao: string };
+
+/** Cadastro rápido a partir da busca do item. Devolve o produto criado (código automático). */
+export async function criarProdutoRapido(descricao: string): Promise<{ produto?: Produto; erro?: string }> {
+  const { supabase } = await exigirAdmin();
+  const d = String(descricao ?? "").trim();
+  if (!d) return { erro: "Informe a descrição do produto." };
+  const { data, error } = await supabase.from("produtos").insert({ descricao: d }).select("codigo, descricao").single();
+  if (error) return { erro: erroBanco(error.message, error.code) };
+  revalidatePath("/cadastros/produtos");
+  return { produto: data };
 }
 
 export async function excluirProduto(_: Estado, fd: FormData): Promise<Estado> {
@@ -49,19 +61,29 @@ export async function excluirProduto(_: Estado, fd: FormData): Promise<Estado> {
   redirect("/cadastros/produtos");
 }
 
-export type LinhaProduto = { codigo: string; descricao: string };
+export type LinhaProduto = { codigo?: string; descricao: string };
 
 export async function importarProdutos(linhas: LinhaProduto[]): Promise<Estado> {
   const { supabase } = await exigirAdmin();
-  const validas = linhas
+  const limpas = linhas
     .map((l) => ({ codigo: String(l.codigo ?? "").trim(), descricao: String(l.descricao ?? "").trim() }))
-    .filter((l) => l.codigo && l.descricao);
-  if (!validas.length) return { erro: "Nenhuma linha válida (código e descrição são obrigatórios)." };
-  const unicos = Array.from(new Map(validas.map((l) => [l.codigo, l])).values());
-  const { error } = await supabase.from("produtos").upsert(unicos, { onConflict: "codigo" });
-  if (error) return { erro: erroBanco(error.message, error.code) };
+    .filter((l) => l.descricao);
+  if (!limpas.length) return { erro: "Nenhuma linha válida (a descrição é obrigatória)." };
+
+  const comCodigo = Array.from(new Map(limpas.filter((l) => l.codigo).map((l) => [l.codigo, l])).values());
+  const semCodigo = limpas.filter((l) => !l.codigo).map((l) => ({ descricao: l.descricao }));
+
+  if (comCodigo.length) {
+    const { error } = await supabase.from("produtos").upsert(comCodigo, { onConflict: "codigo" });
+    if (error) return { erro: erroBanco(error.message, error.code) };
+  }
+  // sem código: um a um, para o banco numerar em sequência
+  for (const p of semCodigo) {
+    const { error } = await supabase.from("produtos").insert(p);
+    if (error) return { erro: erroBanco(error.message, error.code) };
+  }
   revalidatePath("/cadastros/produtos");
-  return { ok: `${unicos.length} produto(s) importado(s)/atualizado(s).` };
+  return { ok: `${comCodigo.length + semCodigo.length} produto(s) importado(s)/atualizado(s).` };
 }
 
 /* ---------------- Itens da licitação ---------------- */
@@ -104,9 +126,7 @@ export async function salvarItem(_: Estado, fd: FormData): Promise<Estado> {
 
   revalidatePath(`/cadastros/licitacoes/${licitacao_id}`);
   revalidatePath(`/ver/licitacao/${licitacao_id}`);
-  const voltar = txt(fd, "voltar");
-  if (id) redirect(voltar.startsWith("/") && !voltar.startsWith("//") ? `${voltar}#itens` : `/cadastros/licitacoes/${licitacao_id}#itens`);
-  return { ok: "Item incluído." };
+  return { ok: id ? "Item atualizado." : "Item incluído." };
 }
 
 export async function excluirItem(_: Estado, fd: FormData): Promise<Estado> {
@@ -121,7 +141,7 @@ export async function excluirItem(_: Estado, fd: FormData): Promise<Estado> {
 
 export type LinhaItem = {
   lote?: string | null;
-  codigo: string;
+  codigo?: string;
   descricao?: string;
   quantidade: number;
   valor_unitario: number;
@@ -134,7 +154,25 @@ export async function importarItens(licitacao_id: string, linhas: LinhaItem[]): 
   const { supabase } = await exigirAdmin();
   if (!linhas.length) return { erro: "Nenhuma linha para importar." };
 
-  // cria no cadastro global os produtos que vieram com descrição e ainda não existem
+  // linhas sem código: procura o produto pela descrição (igual, sem diferenciar maiúsculas); se não houver, cria com código automático
+  const porNome = new Map<string, string>();
+  for (const l of linhas) {
+    if (String(l.codigo ?? "").trim() || !l.descricao) continue;
+    const d = String(l.descricao).trim();
+    const chave = d.toLowerCase();
+    if (porNome.has(chave)) { l.codigo = porNome.get(chave)!; continue; }
+    const { data: achado } = await supabase.from("produtos").select("codigo").ilike("descricao", d.replace(/[%_\\]/g, "\\$&")).limit(1).maybeSingle();
+    let codigo = achado?.codigo as string | undefined;
+    if (!codigo) {
+      const { data: novo, error } = await supabase.from("produtos").insert({ descricao: d }).select("codigo").single();
+      if (error) return { erro: "Erro ao criar produto: " + erroBanco(error.message, error.code) };
+      codigo = novo.codigo;
+    }
+    porNome.set(chave, codigo!);
+    l.codigo = codigo!;
+  }
+
+  // cria no cadastro global os produtos que vieram com código + descrição e ainda não existem
   const comDescricao = linhas
     .filter((l) => l.codigo && l.descricao)
     .map((l) => ({ codigo: String(l.codigo).trim(), descricao: String(l.descricao).trim() }));

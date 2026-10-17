@@ -21,7 +21,9 @@ const totalCalc = (q: string, u: string) => {
   return Number.isFinite(n) ? n.toFixed(2).replace(".", ",") : "";
 };
 
-export default function FormItem({ licitacaoId, inicial, cancelarHref, voltar }: { licitacaoId: string; inicial?: Inicial; cancelarHref?: string; voltar?: string }) {
+export default function FormItem({
+  licitacaoId, inicial, cancelarHref, emModal = false, onSucesso,
+}: { licitacaoId: string; inicial?: Inicial; cancelarHref?: string; emModal?: boolean; onSucesso?: () => void }) {
   const [estado, enviar, pendente] = useActionState<Estado, FormData>(salvarItem, {});
   const ref = useRef<HTMLFormElement>(null);
   const [qtd, setQtd] = useState(inicial?.quantidade ?? "");
@@ -32,16 +34,17 @@ export default function FormItem({ licitacaoId, inicial, cancelarHref, voltar }:
 
   useEffect(() => { if (!totalManual) setTotal(totalCalc(qtd, unit)); }, [qtd, unit, totalManual]);
   useEffect(() => {
+    if (estado.ok && onSucesso) { onSucesso(); return; }
     if (estado.ok && !inicial) {
       ref.current?.reset(); setQtd(""); setUnit(""); setTotal(""); setTotalManual(false); setReset((r) => r + 1);
     }
-  }, [estado, inicial]);
+  }, [estado, inicial, onSucesso]);
 
   return (
-    <form ref={ref} action={enviar} className="cartao p-5">
+    <form ref={ref} action={enviar} className={emModal ? "" : "cartao p-5"}>
       <input type="hidden" name="licitacao_id" value={licitacaoId} />
       {inicial && <input type="hidden" name="id" value={inicial.id} />}
-      {voltar && <input type="hidden" name="voltar" value={voltar} />}
+      {emModal && <input type="hidden" name="modal" value="1" />}
       <div className="grid gap-4 md:grid-cols-6">
         <div className="md:col-span-1">
           <label className="rotulo" htmlFor="lote">Lote</label>
@@ -85,6 +88,7 @@ export default function FormItem({ licitacaoId, inicial, cancelarHref, voltar }:
       <div className="mt-5 flex gap-2">
         <button className="btn-primario" disabled={pendente}>{pendente ? "Salvando…" : inicial ? "Salvar item" : "Incluir item"}</button>
         {cancelarHref && <a href={cancelarHref} className="btn-secundario">Cancelar</a>}
+        {emModal && onSucesso && <button type="button" className="btn-secundario" onClick={onSucesso}>Cancelar</button>}
       </div>
     </form>
   );

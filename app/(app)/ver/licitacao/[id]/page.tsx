@@ -3,8 +3,7 @@ import Ramo from "@/components/Ramo";
 import { obterSessao } from "@/lib/sessao";
 import { obterItens } from "@/lib/itens";
 import TabelaItens from "@/components/TabelaItens";
-import FormItem from "@/components/FormItem";
-import Importador from "@/components/Importador";
+import ItensAcoes from "@/components/ItensAcoes";
 
 export default async function VerLicitacao({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,7 +17,6 @@ export default async function VerLicitacao({ params }: { params: Promise<{ id: s
   const itens = await obterItens(supabase, id);
   const f = data.fornecedores as unknown as { id: string; nome: string; empresas: { id: string; nome: string } };
   const admin = !!perfil?.is_admin;
-  const aqui = `/ver/licitacao/${id}`;
 
   return (
     <>
@@ -32,16 +30,11 @@ export default async function VerLicitacao({ params }: { params: Promise<{ id: s
       />
 
       <section id="itens" className="mt-10 scroll-mt-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-tinta/50">Itens / Produtos</h2>
-        <TabelaItens itens={itens} licitacaoId={id} editavel={admin} voltar={aqui} />
-
-        {admin && (
-          <>
-            <h3 className="mb-2 mt-6 text-sm font-semibold text-tinta/70">Incluir item</h3>
-            <FormItem licitacaoId={id} />
-            <div className="mt-4"><Importador modo="itens" licitacaoId={id} /></div>
-          </>
-        )}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/50">Itens / Produtos</h2>
+          {admin && <ItensAcoes licitacaoId={id} />}
+        </div>
+        <TabelaItens itens={itens} licitacaoId={id} editavel={admin} />
       </section>
     </>
   );
