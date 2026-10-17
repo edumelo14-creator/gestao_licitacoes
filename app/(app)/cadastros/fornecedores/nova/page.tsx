@@ -2,7 +2,7 @@ import Link from "next/link";
 import Cabecalho from "@/components/Cabecalho";
 import FormEntidade from "@/components/FormEntidade";
 import { obterSessao } from "@/lib/sessao";
-import { salvarFornecedor } from "../../actions";
+import { salvarFornecedor } from "@/app/(app)/actions";
 
 export default async function NovoFornecedor({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
   const { empresa } = await searchParams;
@@ -12,16 +12,16 @@ export default async function NovoFornecedor({ searchParams }: { searchParams: P
   if (!empresas?.length) {
     return (
       <>
-        <Cabecalho trilha={[{ href: "/fornecedores", label: "Fornecedores" }]} titulo="Novo fornecedor" />
-        <div className="cartao p-6 text-sm">Cadastre primeiro uma <Link href="/empresas/nova" className="text-marca hover:underline">empresa</Link>.</div>
+        <Cabecalho trilha={[{ href: "/cadastros", label: "Cadastros" }, { href: "/cadastros/fornecedores", label: "Fornecedores" }]} titulo="Novo fornecedor" />
+        <div className="cartao p-6 text-sm">Cadastre primeiro uma <Link href="/cadastros/empresas/nova" className="text-marca hover:underline">empresa</Link>.</div>
       </>
     );
   }
   return (
     <>
-      <Cabecalho trilha={[{ href: "/fornecedores", label: "Fornecedores" }]} titulo="Novo fornecedor (prefeitura)" />
+      <Cabecalho trilha={[{ href: "/cadastros", label: "Cadastros" }, { href: "/cadastros/fornecedores", label: "Fornecedores" }]} titulo="Novo fornecedor (prefeitura)" />
       <FormEntidade
-        action={salvarFornecedor} cancelarHref={empresa ? `/empresas/${empresa}` : "/fornecedores"}
+        action={salvarFornecedor} cancelarHref={empresa ? `/cadastros/empresas/${empresa}` : "/cadastros/fornecedores"}
         campos={[
           { name: "empresa_id", label: "Empresa", tipo: "select", obrigatorio: true, valor: empresa, opcoes: empresas.map((e) => ({ value: e.id, label: e.nome })) },
           { name: "nome", label: "Nome (ex.: Prefeitura Municipal de …)", tipo: "texto", obrigatorio: true },

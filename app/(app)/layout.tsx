@@ -24,13 +24,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const arvore = await obterArvore();
-  const menu = [
-    { href: "/", label: "Início" },
-    { href: "/empresas", label: "Empresas" },
-    { href: "/fornecedores", label: "Fornecedores" },
-    { href: "/licitacoes", label: "Licitações" },
-    ...(perfil.is_admin ? [{ href: "/usuarios", label: "Usuários" }] : []),
-  ];
 
   return (
     <div className="flex h-full">
@@ -41,16 +34,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <div className="text-lg font-semibold leading-tight tracking-tight">Licitações</div>
           </Link>
         </div>
-        <nav className="flex flex-wrap gap-1 px-3 pb-3">
-          {menu.map((m) => (
-            <Link key={m.href} href={m.href} className="rounded px-2 py-1 text-xs text-tinta/70 hover:bg-black/5 hover:text-tinta">
-              {m.label}
-            </Link>
-          ))}
+        <nav className="flex gap-2 px-3 pb-3">
+          <Link href="/" className="btn-secundario flex-1 py-1.5 text-xs">Início</Link>
+          {perfil.is_admin && (
+            <Link href="/cadastros" className="btn-primario flex-1 py-1.5 text-xs">Cadastros</Link>
+          )}
         </nav>
-        <div className="flex items-center justify-between border-t border-linha px-4 pb-2 pt-3">
+        <div className="border-t border-linha px-4 pb-2 pt-3">
           <span className="text-[11px] font-medium uppercase tracking-wide text-tinta/50">Empresa › Prefeitura › Licitação</span>
-          <Link href="/empresas/nova" className="text-xs text-marca hover:underline" title="Nova empresa">+ Nova</Link>
         </div>
         <Arvore dados={arvore} />
         <div className="flex items-center justify-between gap-2 border-t border-linha px-4 py-3 text-xs">

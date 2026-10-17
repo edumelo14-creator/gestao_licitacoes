@@ -26,7 +26,7 @@ export default function Arvore({ dados }: { dados: ArvoreEmpresa[] }) {
 
   // abre automaticamente o caminho até o item selecionado
   useEffect(() => {
-    const id = pathname.split("/")[2];
+    const id = pathname.startsWith("/ver/") ? pathname.split("/").pop() : undefined;
     if (!id) return;
     const novos: Record<string, boolean> = {};
     for (const e of dados) {
@@ -88,7 +88,7 @@ export default function Arvore({ dados }: { dados: ArvoreEmpresa[] }) {
                 <button onClick={() => alternar(e.id)} className="grid h-6 w-5 place-items-center text-tinta/40 hover:text-tinta" aria-label="Expandir">
                   {e.fornecedores.length > 0 ? <Seta aberto={aberto(e.id)} /> : null}
                 </button>
-                <Link href={`/empresas/${e.id}`} className={linha(`/empresas/${e.id}`, ativo(`/empresas/${e.id}`))} title={e.nome}>
+                <Link href={`/ver/empresa/${e.id}`} className={linha(`/ver/empresa/${e.id}`, ativo(`/ver/empresa/${e.id}`))} title={e.nome}>
                   {Icone.empresa}<span className="truncate">{e.nome}</span>
                 </Link>
               </div>
@@ -100,7 +100,7 @@ export default function Arvore({ dados }: { dados: ArvoreEmpresa[] }) {
                         <button onClick={() => alternar(f.id)} className="grid h-6 w-5 place-items-center text-tinta/40 hover:text-tinta" aria-label="Expandir">
                           {f.licitacoes.length > 0 ? <Seta aberto={aberto(f.id)} /> : null}
                         </button>
-                        <Link href={`/fornecedores/${f.id}`} className={linha(`/fornecedores/${f.id}`, ativo(`/fornecedores/${f.id}`))} title={f.nome}>
+                        <Link href={`/ver/fornecedor/${f.id}`} className={linha(`/ver/fornecedor/${f.id}`, ativo(`/ver/fornecedor/${f.id}`))} title={f.nome}>
                           {Icone.fornecedor}<span className="truncate">{f.nome}</span>
                         </Link>
                       </div>
@@ -108,7 +108,7 @@ export default function Arvore({ dados }: { dados: ArvoreEmpresa[] }) {
                         <ul className="ml-[9px] border-l border-linha pl-2">
                           {f.licitacoes.map((l) => (
                             <li key={l.id} className="flex items-center pl-5">
-                              <Link href={`/licitacoes/${l.id}`} className={linha(`/licitacoes/${l.id}`, ativo(`/licitacoes/${l.id}`))} title={`${l.numero} — ${l.descricao}`}>
+                              <Link href={`/ver/licitacao/${l.id}`} className={linha(`/ver/licitacao/${l.id}`, ativo(`/ver/licitacao/${l.id}`))} title={`${l.numero} — ${l.descricao}`}>
                                 {Icone.licitacao}
                                 <span className="shrink-0 font-mono text-[12px]">{l.numero}</span>
                                 <span className="truncate text-tinta/50">{l.descricao}</span>

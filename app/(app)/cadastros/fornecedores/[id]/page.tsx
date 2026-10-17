@@ -5,7 +5,7 @@ import FormEntidade from "@/components/FormEntidade";
 import BotaoExcluir from "@/components/BotaoExcluir";
 import { obterSessao } from "@/lib/sessao";
 import { formatarCnpj } from "@/lib/cnpj";
-import { excluirFornecedor, salvarFornecedor } from "../../actions";
+import { excluirFornecedor, salvarFornecedor } from "@/app/(app)/actions";
 
 export default async function Fornecedor({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +25,7 @@ export default async function Fornecedor({ params }: { params: Promise<{ id: str
   return (
     <>
       <Cabecalho
-        trilha={[{ href: "/empresas", label: "Empresas" }, { href: `/empresas/${emp.id}`, label: emp.nome }]}
+        trilha={[{ href: "/cadastros", label: "Cadastros" }, { href: "/cadastros/empresas", label: "Empresas" }, { href: `/cadastros/empresas/${emp.id}`, label: emp.nome }]}
         titulo={f.nome}
         subtitulo={<span className="font-mono">{formatarCnpj(f.cnpj)}</span>}
         acoes={<BotaoExcluir action={excluirFornecedor} ocultos={{ id: f.id, empresa_id: f.empresa_id }} mensagem={`Excluir o fornecedor "${f.nome}"?`} />}
@@ -42,7 +42,7 @@ export default async function Fornecedor({ params }: { params: Promise<{ id: str
 
       <div className="mb-3 mt-10 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/50">Licitações</h2>
-        <Link href={`/licitacoes/nova?fornecedor=${f.id}`} className="btn-secundario">+ Nova licitação</Link>
+        <Link href={`/cadastros/licitacoes/nova?fornecedor=${f.id}`} className="btn-secundario">+ Nova licitação</Link>
       </div>
       <div className="cartao overflow-hidden">
         {f.licitacoes.length > 0 ? (
@@ -51,7 +51,7 @@ export default async function Fornecedor({ params }: { params: Promise<{ id: str
             <tbody>
               {f.licitacoes.map((l) => (
                 <tr key={l.id} className="hover:bg-papel/60">
-                  <td className="font-mono"><Link href={`/licitacoes/${l.id}`} className="text-marca hover:underline">{l.numero}</Link></td>
+                  <td className="font-mono"><Link href={`/cadastros/licitacoes/${l.id}`} className="text-marca hover:underline">{l.numero}</Link></td>
                   <td>{l.descricao}</td>
                 </tr>
               ))}

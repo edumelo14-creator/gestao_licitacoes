@@ -26,7 +26,7 @@ async function exigirAtivo() {
 /* ---------------- Empresas ---------------- */
 
 export async function salvarEmpresa(_: Estado, fd: FormData): Promise<Estado> {
-  const { supabase } = await exigirAtivo();
+  const { supabase } = await exigirAdmin();
   const id = txt(fd, "id");
   const cnpj = somenteDigitos(txt(fd, "cnpj"));
   const nome = txt(fd, "nome");
@@ -41,21 +41,21 @@ export async function salvarEmpresa(_: Estado, fd: FormData): Promise<Estado> {
   if (error) return { erro: traduzirErro(error.message, error.code) };
 
   revalidatePath("/", "layout");
-  redirect(`/empresas/${data.id}`);
+  redirect(`/cadastros/empresas/${data.id}`);
 }
 
 export async function excluirEmpresa(_: Estado, fd: FormData): Promise<Estado> {
-  const { supabase } = await exigirAtivo();
+  const { supabase } = await exigirAdmin();
   const { error } = await supabase.from("empresas").delete().eq("id", txt(fd, "id"));
   if (error) return { erro: traduzirErro(error.message, error.code) };
   revalidatePath("/", "layout");
-  redirect("/empresas");
+  redirect("/cadastros/empresas");
 }
 
 /* ---------------- Fornecedores ---------------- */
 
 export async function salvarFornecedor(_: Estado, fd: FormData): Promise<Estado> {
-  const { supabase } = await exigirAtivo();
+  const { supabase } = await exigirAdmin();
   const id = txt(fd, "id");
   const empresa_id = txt(fd, "empresa_id");
   const cnpj = somenteDigitos(txt(fd, "cnpj"));
@@ -72,22 +72,22 @@ export async function salvarFornecedor(_: Estado, fd: FormData): Promise<Estado>
   if (error) return { erro: traduzirErro(error.message, error.code) };
 
   revalidatePath("/", "layout");
-  redirect(`/fornecedores/${data.id}`);
+  redirect(`/cadastros/fornecedores/${data.id}`);
 }
 
 export async function excluirFornecedor(_: Estado, fd: FormData): Promise<Estado> {
-  const { supabase } = await exigirAtivo();
+  const { supabase } = await exigirAdmin();
   const empresa = txt(fd, "empresa_id");
   const { error } = await supabase.from("fornecedores").delete().eq("id", txt(fd, "id"));
   if (error) return { erro: traduzirErro(error.message, error.code) };
   revalidatePath("/", "layout");
-  redirect(empresa ? `/empresas/${empresa}` : "/fornecedores");
+  redirect(empresa ? `/cadastros/empresas/${empresa}` : "/cadastros/fornecedores");
 }
 
 /* ---------------- Licitações ---------------- */
 
 export async function salvarLicitacao(_: Estado, fd: FormData): Promise<Estado> {
-  const { supabase } = await exigirAtivo();
+  const { supabase } = await exigirAdmin();
   const id = txt(fd, "id");
   const fornecedor_id = txt(fd, "fornecedor_id");
   const numero = txt(fd, "numero");
@@ -103,16 +103,16 @@ export async function salvarLicitacao(_: Estado, fd: FormData): Promise<Estado> 
   if (error) return { erro: traduzirErro(error.message, error.code) };
 
   revalidatePath("/", "layout");
-  redirect(`/licitacoes/${data.id}`);
+  redirect(`/cadastros/licitacoes/${data.id}`);
 }
 
 export async function excluirLicitacao(_: Estado, fd: FormData): Promise<Estado> {
-  const { supabase } = await exigirAtivo();
+  const { supabase } = await exigirAdmin();
   const fornecedor = txt(fd, "fornecedor_id");
   const { error } = await supabase.from("licitacoes").delete().eq("id", txt(fd, "id"));
   if (error) return { erro: traduzirErro(error.message, error.code) };
   revalidatePath("/", "layout");
-  redirect(fornecedor ? `/fornecedores/${fornecedor}` : "/licitacoes");
+  redirect(fornecedor ? `/cadastros/fornecedores/${fornecedor}` : "/cadastros/licitacoes");
 }
 
 /* ---------------- Usuários (admin) ---------------- */
@@ -155,7 +155,7 @@ export async function criarUsuario(_: Estado, fd: FormData): Promise<Estado> {
   if (admin && data.user) {
     await cliente.from("profiles").update({ is_admin: true, ativo: true }).eq("id", data.user.id);
   }
-  revalidatePath("/usuarios");
+  revalidatePath("/cadastros/usuarios");
   return { ok: `Usuário ${email} criado. Ele pode entrar com essa senha ou com o Google (mesmo e-mail).` };
 }
 
@@ -167,7 +167,7 @@ export async function alterarUsuario(fd: FormData) {
   if (id === user.id) return; // não altera a si mesmo
   if (campo !== "ativo" && campo !== "is_admin") return;
   await supabase.from("profiles").update({ [campo]: valor }).eq("id", id);
-  revalidatePath("/usuarios");
+  revalidatePath("/cadastros/usuarios");
 }
 
 export async function sair() {

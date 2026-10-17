@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Cabecalho from "@/components/Cabecalho";
 import FormUsuario from "@/components/FormUsuario";
 import { obterSessao, type Perfil } from "@/lib/sessao";
-import { alterarUsuario } from "../actions";
+import { alterarUsuario } from "@/app/(app)/actions";
 
 function Alternar({ id, campo, valor, rotulo, desabilitado }: { id: string; campo: string; valor: boolean; rotulo: string; desabilitado?: boolean }) {
   return (
@@ -30,7 +30,7 @@ export default async function Usuarios() {
 
   return (
     <>
-      <Cabecalho titulo="Usuários" subtitulo={pendentes ? `${pendentes} aguardando liberação` : "Controle de acesso ao sistema."} />
+      <Cabecalho trilha={[{ href: "/cadastros", label: "Cadastros" }]} titulo="Usuários" subtitulo={pendentes ? `${pendentes} aguardando liberação` : "Controle de acesso ao sistema."} />
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-tinta/50">Novo usuário</h2>
       <FormUsuario />
       <p className="mt-2 text-xs text-tinta/50">

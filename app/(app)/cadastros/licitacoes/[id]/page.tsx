@@ -4,7 +4,7 @@ import FormEntidade from "@/components/FormEntidade";
 import BotaoExcluir from "@/components/BotaoExcluir";
 import { obterSessao } from "@/lib/sessao";
 import { gruposFornecedores } from "@/lib/opcoes";
-import { excluirLicitacao, salvarLicitacao } from "../../actions";
+import { excluirLicitacao, salvarLicitacao } from "@/app/(app)/actions";
 
 export default async function Licitacao({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,9 +19,9 @@ export default async function Licitacao({ params }: { params: Promise<{ id: stri
   return (
     <>
       <Cabecalho
-        trilha={[
-          { href: `/empresas/${f.empresas.id}`, label: f.empresas.nome },
-          { href: `/fornecedores/${f.id}`, label: f.nome },
+        trilha={[{ href: "/cadastros", label: "Cadastros" },
+          { href: `/cadastros/empresas/${f.empresas.id}`, label: f.empresas.nome },
+          { href: `/cadastros/fornecedores/${f.id}`, label: f.nome },
         ]}
         titulo={`Licitação ${l.numero}`}
         subtitulo={l.descricao}

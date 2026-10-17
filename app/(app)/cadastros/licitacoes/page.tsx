@@ -14,7 +14,7 @@ export default async function Licitacoes({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <Cabecalho titulo="Licitações" subtitulo="Separadas por número e descrição, vinculadas ao fornecedor." acoes={<Link href="/licitacoes/nova" className="btn-primario">Nova licitação</Link>} />
+      <Cabecalho trilha={[{ href: "/cadastros", label: "Cadastros" }]} titulo="Licitações" subtitulo="Separadas por número e descrição, vinculadas ao fornecedor." acoes={<Link href="/cadastros/licitacoes/nova" className="btn-primario">Nova licitação</Link>} />
       <form className="mb-4 flex gap-2">
         <input name="q" defaultValue={q} placeholder="Buscar por número ou descrição…" className="campo max-w-sm" />
         <button className="btn-secundario">Buscar</button>
@@ -28,9 +28,9 @@ export default async function Licitacoes({ searchParams }: { searchParams: Promi
                 const f = l.fornecedores as unknown as { id: string; nome: string; empresas: { id: string; nome: string } } | null;
                 return (
                   <tr key={l.id} className="hover:bg-papel/60">
-                    <td className="font-mono"><Link href={`/licitacoes/${l.id}`} className="text-marca hover:underline">{l.numero}</Link></td>
+                    <td className="font-mono"><Link href={`/cadastros/licitacoes/${l.id}`} className="text-marca hover:underline">{l.numero}</Link></td>
                     <td>{l.descricao}</td>
-                    <td>{f && <Link href={`/fornecedores/${f.id}`} className="hover:underline">{f.nome}</Link>}</td>
+                    <td>{f && <Link href={`/cadastros/fornecedores/${f.id}`} className="hover:underline">{f.nome}</Link>}</td>
                     <td className="text-tinta/60">{f?.empresas?.nome}</td>
                   </tr>
                 );

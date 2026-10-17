@@ -3,7 +3,7 @@ import Cabecalho from "@/components/Cabecalho";
 import FormEntidade from "@/components/FormEntidade";
 import { obterSessao } from "@/lib/sessao";
 import { gruposFornecedores } from "@/lib/opcoes";
-import { salvarLicitacao } from "../../actions";
+import { salvarLicitacao } from "@/app/(app)/actions";
 
 export default async function NovaLicitacao({ searchParams }: { searchParams: Promise<{ fornecedor?: string }> }) {
   const { fornecedor } = await searchParams;
@@ -13,16 +13,16 @@ export default async function NovaLicitacao({ searchParams }: { searchParams: Pr
   if (!grupos.length) {
     return (
       <>
-        <Cabecalho trilha={[{ href: "/licitacoes", label: "Licitações" }]} titulo="Nova licitação" />
-        <div className="cartao p-6 text-sm">Cadastre primeiro um <Link href="/fornecedores/nova" className="text-marca hover:underline">fornecedor (prefeitura)</Link>.</div>
+        <Cabecalho trilha={[{ href: "/cadastros", label: "Cadastros" }, { href: "/cadastros/licitacoes", label: "Licitações" }]} titulo="Nova licitação" />
+        <div className="cartao p-6 text-sm">Cadastre primeiro um <Link href="/cadastros/fornecedores/nova" className="text-marca hover:underline">fornecedor (prefeitura)</Link>.</div>
       </>
     );
   }
   return (
     <>
-      <Cabecalho trilha={[{ href: "/licitacoes", label: "Licitações" }]} titulo="Nova licitação" />
+      <Cabecalho trilha={[{ href: "/cadastros", label: "Cadastros" }, { href: "/cadastros/licitacoes", label: "Licitações" }]} titulo="Nova licitação" />
       <FormEntidade
-        action={salvarLicitacao} cancelarHref={fornecedor ? `/fornecedores/${fornecedor}` : "/licitacoes"}
+        action={salvarLicitacao} cancelarHref={fornecedor ? `/cadastros/fornecedores/${fornecedor}` : "/cadastros/licitacoes"}
         campos={[
           { name: "fornecedor_id", label: "Fornecedor (prefeitura)", tipo: "select", obrigatorio: true, valor: fornecedor, grupos },
           { name: "numero", label: "Número", tipo: "texto", obrigatorio: true, placeholder: "ex.: PE 012/2026", largura: "metade" },
