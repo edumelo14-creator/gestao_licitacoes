@@ -11,7 +11,10 @@ function LoginForm() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erro, setErro] = useState(params.get("erro") ? "Não foi possível concluir o login." : "");
+  const erroUrl = params.get("erro");
+  const [erro, setErro] = useState(
+    erroUrl ? `Não foi possível concluir o login${erroUrl !== "auth" ? `: ${erroUrl}` : "."}` : ""
+  );
   const [carregando, setCarregando] = useState(false);
 
   async function entrarGoogle() {
