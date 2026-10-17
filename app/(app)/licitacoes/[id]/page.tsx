@@ -1,0 +1,40 @@
+import { notFound } from "next/navigation";
+import Cabecalho from "@/components/Cabecalho";
+import FormEntidade from "@/components/FormEntidade";
+import BotaoExcluir from "@/components/BotaoExcluir";
+import { obterSessao } from "@/lib/sessao";
+import { gruposFornecedores } from "@/lib/opcoes";
+import { excluirLicitacao, salvarLicitacao } from "../../actions";
+
+export default async function Licitacao({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { supabase } = await obterSessao();
+  const [{ data: l }, grupos] = await Promise.all([
+    supabase.from("licitacoes").select("id, numero, descricao, fornecedor_id, fornecedores(id, nome, empresas(id, nome))").eq("id", id).maybeSingle(),
+    gruposFornecedores(supabase),
+  ]);
+  if (!l) notFound();
+  const f = l.fornecedores as unknown as { id: string; nome: string; empresas: { id: string; nome: string } };
+
+  return (
+    <>
+      <Cabecalho
+        trilha={[
+          { href: `/empresas/${f.empresas.id}`, label: f.empresas.nome },
+          { href: `/fornecedores/${f.id}`, label: f.nome },
+        ]}
+        titulo={`Licitação ${l.numero}`}
+        subtitulo={l.descricao}
+        acoes={<BotaoExcluir action={excluirLicitacao} ocultos={{ id: l.id, fornecedor_id: l.fornecedor_id }} mensagem={`Excluir a licitação ${l.numero}?`} />}
+      />
+      <FormEntidade
+        action={salvarLicitacao} ocultos={{ id: l.id }}
+        campos={[
+          { name: "fornecedor_id", label: "Fornecedor (prefeitura)", tipo: "select", obrigatorio: true, valor: l.fornecedor_id, grupos },
+          { name: "numero", label: "Número", tipo: "texto", obrigatorio: true, valor: l.numero, largura: "metade" },
+          { name: "descricao", label: "Descrição", tipo: "textarea", obrigatorio: true, valor: l.descricao },
+        ]}
+      />
+    </>
+  );
+}
